@@ -1,0 +1,19 @@
+- name: update apt cache
+  apt: update_cache=yes
+
+- name: Remove old webserver
+  apt:
+    name: apache2
+    state: absent
+
+- name: install nginx
+  apt: pkg={{ item }} state=latest
+  with_items:
+    - nginx
+    - nginx-full
+
+- name: Copy configs to www-dir
+  file:
+    src: /root/vpnclient-configs/
+    dest: /var/www/html/vpn
+    state: link
