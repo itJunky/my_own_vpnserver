@@ -22,3 +22,15 @@ Now you are ready to start to create certificates on your new VPN server for you
 After that you can see URL where you can download ovpn config file.
 
 Download it and copy to local OpenVPN client directiry.
+
+## If you don't have a linux desktop
+
+You can run it instantly on your virtual server. 
+
+For it you need to run all commands on virtual server and set ip 127.0.0.1 in infrastructure.inventory file
+After download client.ovpn config comment out three lines by set # symbol like this
+```
+# script-security 2
+# up /etc/openvpn/update-resolv-conf
+# down /etc/openvpn/update-resolv-conf
+```
