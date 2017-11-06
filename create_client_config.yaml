@@ -1,0 +1,4 @@
+- hosts: '{{ target }}'
+  # strategy: debug
+  roles:
+    - vpnclient

@@ -1,0 +1,55 @@
+---
+- name: Create config directories
+  file:
+    path: /root/vpnclient-configs
+    state: directory
+    mode: 0755
+
+- name: Copy config maker script
+  copy:
+    src: "{{ role_path }}/files/make_config.sh"
+    dest: /root/vpnclient-configs/make_config.sh
+    mode: 0755
+
+- shell: |
+    NUM=`ls -lt /root/openvpn-ca/keys/ | grep vpnclient | head -n 1 | awk '{print $9}' | awk -F '_' '{print $2}' | awk -F '.' '{print $1}'`
+    var=$((NUM+1))
+    echo "$var"
+  register: last_client_config
+  args:
+    executable: /bin/bash
+
+- debug: msg="{{ last_client_config }}"
+
+- name: Create client key
+  shell: |
+    cd /root/openvpn-ca/ || exit 1
+    source ./vars || exit 2
+    ./build-key --batch vpnclient_{{ last_client_config.stdout }} || exit 3
+    exit 0
+  args:
+    executable: /bin/bash
+    # creates: /root/openvpn-ca/keys/vpnclient_{{ last_client_config.stdout }}.crt
+
+- shell: |
+    iface=`netstat -nr | grep -E "^0.0.0.0" | awk '{print $8}'`
+    ip addr show enp0s3 | grep 'inet ' | awk '{print $2}' | awk -F '/' '{print $1}'
+  register: server_ip
+  args:
+    executable: /bin/bash
+
+- debug: msg="{{ server_ip.stdout }}"
+
+- name: Copy base config
+  copy:
+    src: "{{ role_path }}/files/base.conf"
+    dest: /root/vpnclient-configs/base.conf
+
+- name: Set IP in base config
+  replace:
+    path: /root/vpnclient-configs/base.conf
+    regexp: "^remote my-server-1 1194"
+    replace: "remote {{ server_ip.stdout }} 443"
+
+- name: Create client config
+  shell: /root/vpnclient-configs/make_config.sh vpnclient_{{ last_client_config.stdout }}

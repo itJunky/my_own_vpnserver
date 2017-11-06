@@ -1,0 +1,112 @@
+- name: update apt cache
+  apt: update_cache=yes
+
+- name: install openvpn
+  apt: pkg={{ item }} state=latest
+  with_items:
+    - ufw
+    - openvpn
+    - easy-rsa
+    - python-pexpect
+
+- name: Create CA directory
+  shell: make-cadir /root/openvpn-ca
+  args:
+    creates: /root/openvpn-ca/vars
+
+- name: Fix default variables
+  copy:
+    src: "{{ role_path }}/files/vars"
+    dest: /root/openvpn-ca/vars
+
+- name: Clean all
+  shell: |
+    cd /root/openvpn-ca || exit 1
+    source ./vars || exit 2
+    ./clean-all || exit 3
+    exit 0
+  args:
+    executable: /bin/bash
+    creates: /root/openvpn-ca/keys
+
+- name: Create CA cert
+  shell: |
+    cd /root/openvpn-ca || exit 1
+    source ./vars || exit 2
+    ./build-ca --batch || exit 3
+    exit 0
+  args:
+    executable: /bin/bash
+    creates: /root/openvpn-ca/keys/ca.crt
+
+- name: Create server key
+  shell: |
+    cd /root/openvpn-ca/ || exit 1
+    source ./vars || exit 2
+    ./build-key-server --batch vpnserver || exit 3
+    ./build-dh || exit 4
+    openvpn --genkey --secret keys/ta.key || exit 5
+    exit 0
+  args:
+    executable: /bin/bash
+    creates: /root/openvpn-ca/keys/ta.key
+
+- name: Create client key
+  shell: |
+    cd /root/openvpn-ca/ || exit 1
+    source ./vars || exit 2
+    ./build-key --batch vpnclient || exit 3
+    exit 0
+  args:
+    executable: /bin/bash
+    creates: /root/openvpn-ca/keys/vpnclient.crt
+
+- name: Copy keys to OpenVPN server
+  shell: |
+    cd /root/openvpn-ca/keys || exit 1
+    cp ca.crt ca.key vpnserver.crt vpnserver.key ta.key dh2048.pem /etc/openvpn || exit 2
+    exit 0
+  args:
+    executable: /bin/bash
+    creates: /etc/openvpn/server.conf
+
+- name: Copy configs to OpenVPN server
+  copy:
+    src: "{{ role_path }}/files/server.conf"
+    dest: /etc/openvpn
+
+- name: Configure server for forwarding
+  replace:
+    path: /etc/sysctl.conf
+    regexp: '^#net.ipv4.ip_forward=1'
+    replace: 'net.ipv4.ip_forward=1'
+    backup: yes
+
+- name: Apply sysctl
+  shell: sysctl -p
+
+- name: Copy UFW config
+  copy:
+    src: "{{ role_path }}/files/before.rules"
+    dest: /etc/ufw/before.rules
+
+- name: Enable accept policy in UFW
+  replace:
+    path: /etc/default/ufw
+    regexp: '^DEFAULT_FORWARD_POLICY="DROP"'
+    replace: 'DEFAULT_FORWARD_POLICY="ACCEPT"'
+    backup: yes
+
+- name: Configure UFW
+  shell: |
+    ufw allow OpenSSH
+    ufw allow 443/tcp
+    ufw disable
+    ufw enable
+
+- name: Start OpenVPN daemon
+  shell: |
+    systemctl enable openvpn@server || exit 1
+    systemctl start openvpn@server || exit 2
+  args:
+    executable: /bin/bash
