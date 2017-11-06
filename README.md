@@ -9,7 +9,7 @@ cd my_own_vpnserver
 ```
 Change name and IP/domain of your virtual server in infrastructure.inventory file from
 ```
-debian9-test ansible_ssh_host=192.168.1.1
+localhost
 ```
 To something like this
 ```
@@ -27,7 +27,7 @@ Download it and copy to local OpenVPN client directiry.
 
 You can run it instantly on your virtual server. 
 
-For it you need to run all commands on virtual server and set ip 127.0.0.1 in infrastructure.inventory file
+For it you need just run all commands on virtual server
 After download client.ovpn config comment out three lines by set # symbol like this
 ```
 # script-security 2

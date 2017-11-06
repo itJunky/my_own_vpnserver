@@ -1,4 +1,4 @@
-- hosts: '{{ target }}'
+- hosts: all
   # strategy: debug
   roles:
     - openvpn
