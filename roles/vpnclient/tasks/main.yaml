@@ -19,7 +19,7 @@
   args:
     executable: /bin/bash
 
-- debug: msg="{{ last_client_config }}"
+- debug: msg="{{ last_client_config }}" # vim syntax highlight fix"
 
 - name: Create client key
   shell: |
@@ -31,14 +31,20 @@
     executable: /bin/bash
     # creates: /root/openvpn-ca/keys/vpnclient_{{ last_client_config.stdout }}.crt
 
+- name: Getting interface name
+  shell: |
+    netstat -nr | grep -E "^0.0.0.0" | awk '{print $8}'
+  register: interface_name
+
+- debug: msg="{{ interface_name.stdout }}" #"
+
 - shell: |
-    iface=`netstat -nr | grep -E "^0.0.0.0" | awk '{print $8}'`
-    ip addr show enp0s3 | grep 'inet ' | awk '{print $2}' | awk -F '/' '{print $1}'
+    ip addr show "{{ interface_name.stdout }}" | grep 'inet ' | awk '{print $4}' | awk -F '/' '{print $1}'
   register: server_ip
   args:
     executable: /bin/bash
 
-- debug: msg="{{ server_ip.stdout }}"
+- debug: msg="{{ server_ip.stdout }}" #"
 
 - name: Copy base config
   copy:
@@ -58,3 +64,4 @@
   shell: cp /root/vpnclient-configs/vpnclient_{{ last_client_config.stdout }}.ovpn /var/www/html
 
 - debug: msg="Download config from here http://{{ server_ip.stdout }}/vpnclient_{{ last_client_config.stdout }}.ovpn"
+
