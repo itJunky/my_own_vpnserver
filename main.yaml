@@ -2,5 +2,5 @@
   # strategy: debug
   roles:
     - openvpn
-    - publishing
     - vpnclient
+    - publishing
