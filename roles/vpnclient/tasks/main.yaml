@@ -39,7 +39,7 @@
 - debug: msg="{{ interface_name.stdout }}" #"
 
 - shell: |
-    ip addr show "{{ interface_name.stdout }}" | grep 'inet ' | awk '{print $4}' | awk -F '/' '{print $1}'
+    ip addr show "{{ interface_name.stdout }}" | grep 'inet ' | awk '{print $2}' | awk -F '/' '{print $1}'
   register: server_ip
   args:
     executable: /bin/bash
