@@ -64,6 +64,12 @@
 - name: Create client config
   shell: /root/vpnclient-configs/make_config.sh {{ client_name }}_{{ last_client_config.stdout }}
 
+- name: Ensure directory for publishing exist
+  file:
+    path: /var/www/html
+    state: directory
+    mode: 0755
+
 - name: Copy config to publishing
   shell: cp /root/vpnclient-configs/{{ client_name }}_{{ last_client_config.stdout }}.ovpn /var/www/html
 
