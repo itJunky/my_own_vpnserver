@@ -1,0 +1,8 @@
+- hosts: all
+  sudo: yes
+  remote_user: root
+  gather_facts: no
+  pre_tasks:
+    - name: 'install python2'
+      raw: apt -y install python
+
