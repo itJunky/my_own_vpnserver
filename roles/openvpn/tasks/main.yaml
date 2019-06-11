@@ -102,7 +102,7 @@
     ufw allow OpenSSH
     ufw allow 443/tcp
     ufw disable
-    ufw enable
+    echo "y" | ufw enable
 
 - name: Start OpenVPN daemon
   shell: |
